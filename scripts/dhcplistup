@@ -1,0 +1,35 @@
+#!/bin/sh
+# do not use this script in this form, 
+# change (especially about authentication part) for meet your requirement..
+git_user_name=$1
+git_password=$2
+GITHUB=https://${git_user_name}:${git_password}@github.com/vietnamworker/dhcplist.git
+WORKDIR=$HOME/work/dhcplistup
+
+if [ ! -d $WORKDIR ];then
+	git clone $GITHUB $WORKDIR
+else
+	(cd $WORKDIR;git pull)
+fi
+
+cat > $WORKDIR/README.md <<EOF_LISTHEAD
+dhcplist
+========
+
+The following list items will be updated when the computer is restarted(or when dhcp lease request is issued).  
+
+See https://gist.github.com/kurohara/5881858 for check your environment.  
+
+
+host name| ip address
+---------|-----------
+EOF_LISTHEAD
+
+sqlite3 /var/tmp/dhcpdata.db >> $WORKDIR/README.md <<EOF_SQL
+select hostname, ipaddr from maclist order by hostname;
+EOF_SQL
+
+cd $WORKDIR
+git add README.md
+git commit -m "README updated"
+git push 
